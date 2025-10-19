@@ -4,6 +4,7 @@ require 'socket'
 require_relative 'configuration'
 require_relative 'connection'
 require_relative 'protocol'
+require_relative 'message'
 require_relative 'logger'
 
 module NetServer

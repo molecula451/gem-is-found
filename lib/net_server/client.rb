@@ -9,6 +9,9 @@ module NetServer
   class Client
     attr_reader :host, :port, :logger
 
+    # Small delay to allow server to process messages
+    PROCESSING_DELAY = 0.1
+
     def initialize(host = 'localhost', port = 9090, logger: Logger.new)
       @host = host
       @port = port
@@ -103,7 +106,7 @@ module NetServer
     def echo_test(text)
       return nil unless send_echo(text)
 
-      sleep 0.1  # Small delay to allow server to process
+      sleep PROCESSING_DELAY
       response = receive(timeout: 3)
       response&.payload
     end
