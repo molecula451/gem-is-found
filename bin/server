@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative '../lib/net_server'
+
+# Parse command line arguments
+port = ARGV[0]&.to_i || 9090
+host = ARGV[1] || 'localhost'
+
+# Create configuration
+config = NetServer::Configuration.new(
+  host: host,
+  port: port,
+  max_connections: 10,
+  timeout: 30
+)
+
+# Create logger
+logger = NetServer::Logger.new($stdout, level: :info)
+
+# Create and start server
+server = NetServer::Server.new(config, logger: logger)
+
+# Handle graceful shutdown
+trap('INT') do
+  puts "\nReceived interrupt signal, shutting down..."
+  server.stop
+  exit(0)
+end
+
+trap('TERM') do
+  puts "\nReceived termination signal, shutting down..."
+  server.stop
+  exit(0)
+end
+
+# Start the server
+begin
+  server.start
+rescue StandardError => e
+  logger.fatal("Server error: #{e.message}")
+  exit(1)
+end
