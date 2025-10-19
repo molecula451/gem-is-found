@@ -1,0 +1,69 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative '../lib/net_server'
+
+# Parse command line arguments
+host = ARGV[0] || 'localhost'
+port = ARGV[1]&.to_i || 9090
+
+# Create logger
+logger = NetServer::Logger.new($stdout, level: :info)
+
+# Create client
+client = NetServer::Client.new(host, port, logger: logger)
+
+# Connect to server
+unless client.connect
+  logger.fatal('Failed to connect to server')
+  exit(1)
+end
+
+puts "\nConnected to server at #{host}:#{port}"
+puts 'Type messages to send (or "quit" to exit):'
+puts 'Commands: ping, echo <text>, quit'
+puts
+
+# Interactive loop
+loop do
+  print '> '
+  input = gets&.chomp
+  break unless input
+
+  case input
+  when 'quit', 'exit'
+    logger.info('Exiting...')
+    break
+  when 'ping'
+    if client.ping_server
+      puts 'Server responded with pong!'
+    else
+      puts 'No response from server'
+    end
+  when /^echo\s+(.+)$/
+    text = Regexp.last_match(1)
+    response = client.echo_test(text)
+    if response
+      puts "Server echoed: #{response}"
+    else
+      puts 'No response from server'
+    end
+  when ''
+    next
+  else
+    if client.send_text(input)
+      response = client.receive(timeout: 3)
+      if response
+        puts "Server: #{response.payload}"
+      else
+        puts 'No response from server'
+      end
+    else
+      puts 'Failed to send message'
+    end
+  end
+end
+
+# Disconnect
+client.disconnect
+puts 'Disconnected from server'
